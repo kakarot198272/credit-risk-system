@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+streamlit
+pandas
+numpy<2
+scikit-learn==1.6.1
+xgboost
+joblib
+shap
+requests
