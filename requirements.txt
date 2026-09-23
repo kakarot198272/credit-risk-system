@@ -1,10 +1,15 @@
-fastapi
-uvicorn
-streamlit
-pandas
-numpy<2
+fastapi==0.115.12
+uvicorn==0.34.2
+pydantic==2.11.4
+streamlit==1.45.1
+plotly==6.1.1
+pandas==2.2.3
+numpy==1.26.4
+scipy==1.14.1
 scikit-learn==1.6.1
-xgboost
-joblib
-shap
-requests
+xgboost-cpu==2.1.4; platform_system == "Linux"
+xgboost==2.1.4; platform_system != "Linux"
+joblib==1.4.2
+shap==0.47.2
+pyarrow==20.0.0
+requests==2.32.3

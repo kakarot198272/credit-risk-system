@@ -1,149 +1,149 @@
+"""FastAPI inference with explicit readiness and model-specific input validation."""
+
 import json
+import logging
 import os
-import uuid
-from datetime import datetime, timezone
+import threading
+from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any
 
-import joblib
-import numpy as np
-import pandas as pd
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, HTTPException, Request
+from pydantic import BaseModel, ConfigDict, Field
 
-REGISTRY_PATH = "models/registry.json"
-POLICY_PATH = "src/config/decision_policy.json"
-LOG_PATH = "logs/prediction_logs.jsonl"
+from src.inference.predict import InputError, Predictor
+from src.risk.artifacts import ROOT
 
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# -----------------------------
-# Load Production Model
-# -----------------------------
-def load_production_model():
-    with open(REGISTRY_PATH, "r") as f:
-        registry = json.load(f)
-
-    model_file = registry.get("production_model")
-    if not model_file:
-        raise RuntimeError("No production model found in registry.")
-
-    model_path = os.path.join("models", model_file)
-    model = joblib.load(model_path)
-
-    return model, model_file
+logger = logging.getLogger(__name__)
+log_lock = threading.Lock()
 
 
-def load_policy():
-    with open(POLICY_PATH, "r") as f:
-        return json.load(f)
+class PredictionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    features: dict[str, Any]
+    explain: bool = True
 
 
-def log_prediction(entry: dict):
-    os.makedirs("logs", exist_ok=True)
-    with open(LOG_PATH, "a") as f:
-        f.write(json.dumps(entry) + "\n")
+class BatchRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    applicants: list[dict[str, Any]] = Field(min_length=1, max_length=100)
+    explain: bool = False
 
 
-# -----------------------------
-# Business Helpers
-# -----------------------------
-def assign_bucket(p: float) -> str:
-    if p < 0.05:
-        return "0-5%"
-    elif p < 0.10:
-        return "5-10%"
-    elif p < 0.15:
-        return "10-15%"
-    elif p < 0.20:
-        return "15-20%"
-    else:
-        return "20%+"
+def create_app(model_dir=None, log_path=None):
+    prediction_log = Path(
+        log_path or os.environ.get("CREDIT_RISK_LOG_PATH", ROOT / "logs/prediction_logs.jsonl")
+    )
 
+    @asynccontextmanager
+    async def lifespan(application):
+        try:
+            application.state.predictor = Predictor.from_directory(model_dir)
+            application.state.load_error = None
+        except Exception:
+            logger.exception("Model unavailable; /ready will report 503")
+            application.state.predictor = None
+            application.state.load_error = (
+                "No valid active model. Train and activate a model, then restart the API."
+            )
+        yield
 
-def compute_expected_profit(p: float, margin: float, lgd: float) -> float:
-    return (1 - p) * margin - p * lgd
+    application = FastAPI(
+        title="Credit Risk Decision & Monitoring",
+        version="2.0.0",
+        description="Portfolio demonstration. Predictions and simulated economics require dataset-specific validation.",
+        lifespan=lifespan,
+    )
 
+    def predictor(request):
+        instance = request.app.state.predictor
+        if instance is None:
+            raise HTTPException(status_code=503, detail=request.app.state.load_error)
+        return instance
 
-def safe_jsonable(val: Any):
-    if isinstance(val, (np.floating, np.float32, np.float64)):
-        return float(val)
-    if isinstance(val, (np.integer, np.int32, np.int64)):
-        return int(val)
-    return val
+    def write_logs(results):
+        # Store operational outputs only; never record raw applicant features.
+        entries = [
+            {
+                name: row[name]
+                for name in [
+                    "request_id",
+                    "timestamp",
+                    "model_version",
+                    "dataset_kind",
+                    "predicted_pd",
+                    "decision",
+                    "threshold_used",
+                ]
+            }
+            for row in results
+        ]
+        try:
+            prediction_log.parent.mkdir(parents=True, exist_ok=True)
+            with log_lock, prediction_log.open("a") as handle:
+                for entry in entries:
+                    handle.write(json.dumps(entry, allow_nan=False) + "\n")
+        except OSError:
+            logger.exception("Could not append prediction audit log")
 
-
-# -----------------------------
-# Startup
-# -----------------------------
-model, model_version = load_production_model()
-policy = load_policy()
-
-MARGIN = float(policy["margin"])
-LGD = float(policy["lgd"])
-THRESHOLD = float(policy["threshold"])
-
-# Explicitly disable SHAP in production
-shap_bundle = {"enabled": False}
-
-try:
-    expected_raw_cols = model.feature_names_in_.tolist()
-except Exception:
-    expected_raw_cols = None
-
-
-# -----------------------------
-# Endpoints
-# -----------------------------
-@app.get("/")
-def health():
-    return {
-        "status": "Credit Risk API running",
-        "model_version": model_version,
-        "shap_enabled": False
-    }
-
-
-@app.post("/predict")
-def predict(data: dict):
-    try:
-        request_id = str(uuid.uuid4())
-        timestamp = datetime.now(timezone.utc).isoformat()
-
-        df = pd.DataFrame([data])
-
-        if expected_raw_cols:
-            df = df.reindex(columns=expected_raw_cols)
-
-        prob = float(model.predict_proba(df)[0][1])
-
-        decision = "APPROVE" if prob < THRESHOLD else "REJECT"
-        expected_profit = compute_expected_profit(prob, MARGIN, LGD)
-        bucket = assign_bucket(prob)
-
-        response = {
-            "request_id": request_id,
-            "model_version": model_version,
-            "predicted_pd": round(prob, 4),
-            "decision": decision,
-            "expected_profit": round(expected_profit, 4),
-            "risk_bucket": bucket,
-            "threshold_used": THRESHOLD,
-            "timestamp": timestamp,
-            "top_risk_factors": []
+    @application.get("/")
+    @application.get("/health")
+    def health(request: Request):
+        instance = request.app.state.predictor
+        return {
+            "status": "running",
+            "ready": instance is not None,
+            "model_version": instance.version if instance else None,
         }
 
-        log_prediction({k: safe_jsonable(v) for k, v in response.items()})
+    @application.get("/ready")
+    def ready(request: Request):
+        instance = predictor(request)
+        return {
+            "ready": True,
+            "model_version": instance.version,
+            "dataset_kind": instance.bundle["dataset_kind"],
+        }
 
-        return response
+    @application.get("/schema")
+    def schema(request: Request):
+        return predictor(request).metadata()
 
-    except Exception as e:
-        print("Prediction error:", e)
-        raise HTTPException(status_code=500, detail=str(e))
+    @application.post("/predict")
+    def predict(data: PredictionRequest, request: Request):
+        instance = predictor(request)
+        try:
+            result = instance.predict(data.features, explain=data.explain)
+        except InputError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        except Exception as exc:
+            logger.exception("Prediction failed")
+            raise HTTPException(
+                status_code=500, detail="Prediction failed; check server logs"
+            ) from exc
+        write_logs([result])
+        return result
+
+    @application.post("/predict/batch")
+    def batch(data: BatchRequest, request: Request):
+        if data.explain and len(data.applicants) > 10:
+            raise HTTPException(
+                status_code=422, detail="Explanations are limited to 10 applicants per request"
+            )
+        instance = predictor(request)
+        try:
+            results = instance.predict_many(data.applicants, explain=data.explain)
+        except InputError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        except Exception as exc:
+            logger.exception("Batch prediction failed")
+            raise HTTPException(
+                status_code=500, detail="Prediction failed; check server logs"
+            ) from exc
+        write_logs(results)
+        return {"model_version": instance.version, "count": len(results), "predictions": results}
+
+    return application
+
+
+app = create_app()

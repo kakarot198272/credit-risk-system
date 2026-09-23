@@ -1,52 +1,37 @@
-import numpy as np
+"""Explore validation policies; never overwrite the frozen active policy."""
+
+import argparse
+import json
+from pathlib import Path
+
 import pandas as pd
 
-MARGIN = 0.10
-LGD = 0.60
+from src.risk.artifacts import active_bundle_path, model_directory
+from src.risk.policy import optimize_policy
 
 
-def calculate_profit(pred_probs, threshold):
-    decisions = pred_probs < threshold
-
-    profits = np.where(
-        decisions,
-        (1 - pred_probs) * MARGIN - pred_probs * LGD,
-        0
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--model-dir", type=Path, default=model_directory())
+    parser.add_argument("--margin", type=float, default=0.10)
+    parser.add_argument("--lgd", type=float, default=0.60)
+    args = parser.parse_args()
+    predictions = pd.read_csv(
+        active_bundle_path(args.model_dir).parent / "validation_predictions.csv"
     )
-
-    return profits.sum()
-
-
-def evaluate_model(file_path):
-    df = pd.read_csv(file_path)
-    pred_probs = df["pred_prob"].values
-
-    thresholds = np.linspace(0.01, 0.5, 100)
-
-    best_threshold = 0
-    best_profit = -np.inf
-
-    for t in thresholds:
-        profit = calculate_profit(pred_probs, t)
-        if profit > best_profit:
-            best_profit = profit
-            best_threshold = t
-
-    return best_threshold, best_profit
+    policy, summary, _ = optimize_policy(
+        predictions.true_label,
+        predictions.pred_prob,
+        predictions.loan_amount,
+        margin=args.margin,
+        lgd=args.lgd,
+    )
+    print(
+        json.dumps(
+            {"split": "validation", "policy": policy.to_dict(), "portfolio": summary}, indent=2
+        )
+    )
 
 
 if __name__ == "__main__":
-    models = {
-    "Logistic": "artifacts/metrics/validation_predictions_logistic.csv",
-    "LightGBM": "artifacts/metrics/validation_predictions_lightgbm.csv",
-    "LightGBM Calibrated": "artifacts/metrics/validation_predictions_lightgbm_calibrated.csv",
-    "XGBoost": "artifacts/metrics/validation_predictions_xgboost.csv"
-    }
-
-
-
-    for name, path in models.items():
-        threshold, profit = evaluate_model(path)
-        print(f"\n{name}")
-        print(f"Optimal Threshold: {threshold:.4f}")
-        print(f"Maximum Expected Profit: {profit:.4f}")
+    main()
