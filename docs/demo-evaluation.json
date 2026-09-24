@@ -1,0 +1,704 @@
+{
+  "model_version": "20260923T183109_584028Z",
+  "selected_model": "xgboost_shallow",
+  "selected_on": "validation simulated profit; Brier score breaks ties",
+  "policy": {
+    "margin": 0.1,
+    "lgd": 0.6,
+    "threshold": 0.17500000000000002
+  },
+  "dataset_kind": "synthetic",
+  "generated_at": "2026-09-23T18:31:10.019157+00:00",
+  "source_file": "model_input.parquet",
+  "source_sha256": "105f82a60406a9c82485c330d18b837be3be64f3d8771df8f4c00805187308c3",
+  "git_commit": "89107b91270499dfcbbb81c1d8b10f8635638647",
+  "working_tree_dirty": true,
+  "random_seed": 42,
+  "features": 16,
+  "split_counts": {
+    "train": 2000,
+    "calibration": 600,
+    "validation": 600,
+    "test": 800
+  },
+  "split_default_rates": {
+    "train": 0.1435,
+    "calibration": 0.14333333333333334,
+    "validation": 0.14333333333333334,
+    "test": 0.14375
+  },
+  "excluded_identifier_columns": [
+    "SK_ID_CURR"
+  ],
+  "hyperparameters": {
+    "logistic_baseline": {
+      "C": 0.5,
+      "max_iter": 2000
+    },
+    "xgboost_shallow": {
+      "n_estimators": 60,
+      "max_depth": 3,
+      "learning_rate": 0.05,
+      "subsample": 0.8,
+      "colsample_bytree": 0.8,
+      "reg_lambda": 2.0,
+      "min_child_weight": 5,
+      "objective": "binary:logistic",
+      "eval_metric": "logloss",
+      "tree_method": "hist",
+      "n_jobs": 2,
+      "random_state": 42
+    },
+    "xgboost_shallow_calibrated": {
+      "n_estimators": 60,
+      "max_depth": 3,
+      "learning_rate": 0.05,
+      "subsample": 0.8,
+      "colsample_bytree": 0.8,
+      "reg_lambda": 2.0,
+      "min_child_weight": 5,
+      "objective": "binary:logistic",
+      "eval_metric": "logloss",
+      "tree_method": "hist",
+      "n_jobs": 2,
+      "random_state": 42,
+      "calibration": "sigmoid, separate calibration split"
+    },
+    "xgboost_deeper": {
+      "n_estimators": 90,
+      "max_depth": 5,
+      "learning_rate": 0.05,
+      "subsample": 0.8,
+      "colsample_bytree": 0.8,
+      "reg_lambda": 2.0,
+      "min_child_weight": 5,
+      "objective": "binary:logistic",
+      "eval_metric": "logloss",
+      "tree_method": "hist",
+      "n_jobs": 2,
+      "random_state": 42
+    },
+    "xgboost_deeper_calibrated": {
+      "n_estimators": 90,
+      "max_depth": 5,
+      "learning_rate": 0.05,
+      "subsample": 0.8,
+      "colsample_bytree": 0.8,
+      "reg_lambda": 2.0,
+      "min_child_weight": 5,
+      "objective": "binary:logistic",
+      "eval_metric": "logloss",
+      "tree_method": "hist",
+      "n_jobs": 2,
+      "random_state": 42,
+      "calibration": "sigmoid, separate calibration split"
+    }
+  },
+  "validation": {
+    "logistic_baseline": {
+      "metrics": {
+        "roc_auc": 0.8046104424938919,
+        "average_precision": 0.4589097709888494,
+        "brier_score": 0.10034294734878588,
+        "log_loss": 0.33423281530748244,
+        "default_prevalence": 0.14333333333333334
+      },
+      "policy": {
+        "margin": 0.1,
+        "lgd": 0.6,
+        "threshold": 0.195
+      },
+      "portfolio": {
+        "threshold": 0.195,
+        "applications": 600,
+        "approved": 413,
+        "approval_rate": 0.6883333333333334,
+        "approved_exposure": 62721548.86,
+        "observed_default_rate": 0.053268765133171914,
+        "mean_predicted_pd": 0.077677968115339,
+        "simulated_loss": 2478274.596,
+        "simulated_revenue": 5859109.120000001,
+        "simulated_profit": 3380834.524000001,
+        "expected_profit": 1751087.6228851103,
+        "profit_per_application": 5634.724206666669,
+        "assumptions": {
+          "margin": 0.1,
+          "lgd": 0.6,
+          "threshold": 0.195
+        }
+      },
+      "calibration": [
+        {
+          "count": 279,
+          "mean_predicted_pd": 0.04481350009824537,
+          "observed_default_rate": 0.035842293906810034
+        },
+        {
+          "count": 142,
+          "mean_predicted_pd": 0.1490251178410946,
+          "observed_default_rate": 0.09154929577464789
+        },
+        {
+          "count": 89,
+          "mean_predicted_pd": 0.24896051079677797,
+          "observed_default_rate": 0.24719101123595505
+        },
+        {
+          "count": 56,
+          "mean_predicted_pd": 0.34091370647288066,
+          "observed_default_rate": 0.35714285714285715
+        },
+        {
+          "count": 20,
+          "mean_predicted_pd": 0.4366955216250686,
+          "observed_default_rate": 0.65
+        },
+        {
+          "count": 11,
+          "mean_predicted_pd": 0.5541604404865471,
+          "observed_default_rate": 0.45454545454545453
+        },
+        {
+          "count": 2,
+          "mean_predicted_pd": 0.6502105895691658,
+          "observed_default_rate": 1.0
+        },
+        {
+          "count": 1,
+          "mean_predicted_pd": 0.7295504655981775,
+          "observed_default_rate": 1.0
+        }
+      ]
+    },
+    "xgboost_shallow": {
+      "metrics": {
+        "roc_auc": 0.8133653063071217,
+        "average_precision": 0.4652494893818204,
+        "brier_score": 0.09870396094030975,
+        "log_loss": 0.32870857751903526,
+        "default_prevalence": 0.14333333333333334
+      },
+      "policy": {
+        "margin": 0.1,
+        "lgd": 0.6,
+        "threshold": 0.17500000000000002
+      },
+      "portfolio": {
+        "threshold": 0.17500000000000002,
+        "applications": 600,
+        "approved": 399,
+        "approval_rate": 0.665,
+        "approved_exposure": 59148318.11,
+        "observed_default_rate": 0.047619047619047616,
+        "mean_predicted_pd": 0.07907253424438618,
+        "simulated_loss": 1981568.604,
+        "simulated_revenue": 5584570.377,
+        "simulated_profit": 3603001.773,
+        "expected_profit": 1567362.707848471,
+        "profit_per_application": 6005.002955,
+        "assumptions": {
+          "margin": 0.1,
+          "lgd": 0.6,
+          "threshold": 0.17500000000000002
+        }
+      },
+      "calibration": [
+        {
+          "count": 263,
+          "mean_predicted_pd": 0.04951699078083038,
+          "observed_default_rate": 0.030418250950570342
+        },
+        {
+          "count": 182,
+          "mean_predicted_pd": 0.14921452105045319,
+          "observed_default_rate": 0.11538461538461539
+        },
+        {
+          "count": 75,
+          "mean_predicted_pd": 0.24170993268489838,
+          "observed_default_rate": 0.2
+        },
+        {
+          "count": 41,
+          "mean_predicted_pd": 0.35013547539711,
+          "observed_default_rate": 0.43902439024390244
+        },
+        {
+          "count": 28,
+          "mean_predicted_pd": 0.4388248920440674,
+          "observed_default_rate": 0.5714285714285714
+        },
+        {
+          "count": 10,
+          "mean_predicted_pd": 0.5604150891304016,
+          "observed_default_rate": 0.8
+        },
+        {
+          "count": 1,
+          "mean_predicted_pd": 0.6402779817581177,
+          "observed_default_rate": 0.0
+        }
+      ]
+    },
+    "xgboost_shallow_calibrated": {
+      "metrics": {
+        "roc_auc": 0.8133653063071217,
+        "average_precision": 0.4652494893818204,
+        "brier_score": 0.09687889192390166,
+        "log_loss": 0.32563408148891737,
+        "default_prevalence": 0.14333333333333334
+      },
+      "policy": {
+        "margin": 0.1,
+        "lgd": 0.6,
+        "threshold": 0.135
+      },
+      "portfolio": {
+        "threshold": 0.135,
+        "applications": 600,
+        "approved": 396,
+        "approval_rate": 0.66,
+        "approved_exposure": 58467842.24,
+        "observed_default_rate": 0.047979797979797977,
+        "mean_predicted_pd": 0.07410545198416169,
+        "simulated_loss": 1981568.6039999998,
+        "simulated_revenue": 5516522.79,
+        "simulated_profit": 3534954.186,
+        "expected_profit": 2227924.1476076227,
+        "profit_per_application": 5891.5903100000005,
+        "assumptions": {
+          "margin": 0.1,
+          "lgd": 0.6,
+          "threshold": 0.135
+        }
+      },
+      "calibration": [
+        {
+          "count": 316,
+          "mean_predicted_pd": 0.06359848600541111,
+          "observed_default_rate": 0.04430379746835443
+        },
+        {
+          "count": 160,
+          "mean_predicted_pd": 0.13779899561777711,
+          "observed_default_rate": 0.15
+        },
+        {
+          "count": 46,
+          "mean_predicted_pd": 0.24080988408430762,
+          "observed_default_rate": 0.13043478260869565
+        },
+        {
+          "count": 22,
+          "mean_predicted_pd": 0.3510685346343301,
+          "observed_default_rate": 0.5
+        },
+        {
+          "count": 23,
+          "mean_predicted_pd": 0.44718623420466547,
+          "observed_default_rate": 0.5217391304347826
+        },
+        {
+          "count": 17,
+          "mean_predicted_pd": 0.5447375178337097,
+          "observed_default_rate": 0.4117647058823529
+        },
+        {
+          "count": 7,
+          "mean_predicted_pd": 0.6466749225343976,
+          "observed_default_rate": 0.7142857142857143
+        },
+        {
+          "count": 6,
+          "mean_predicted_pd": 0.7651966412862142,
+          "observed_default_rate": 1.0
+        },
+        {
+          "count": 3,
+          "mean_predicted_pd": 0.8193039496739706,
+          "observed_default_rate": 0.3333333333333333
+        }
+      ]
+    },
+    "xgboost_deeper": {
+      "metrics": {
+        "roc_auc": 0.8007420142973486,
+        "average_precision": 0.44730210932122416,
+        "brier_score": 0.10037518963416586,
+        "log_loss": 0.33332940585444504,
+        "default_prevalence": 0.14333333333333334
+      },
+      "policy": {
+        "margin": 0.1,
+        "lgd": 0.6,
+        "threshold": 0.165
+      },
+      "portfolio": {
+        "threshold": 0.165,
+        "applications": 600,
+        "approved": 414,
+        "approval_rate": 0.69,
+        "approved_exposure": 63036719.10999999,
+        "observed_default_rate": 0.06038647342995169,
+        "mean_predicted_pd": 0.069644328755673,
+        "simulated_loss": 2676197.64,
+        "simulated_revenue": 5857638.971000001,
+        "simulated_profit": 3181441.3310000007,
+        "expected_profit": 2259573.9312741114,
+        "profit_per_application": 5302.4022183333345,
+        "assumptions": {
+          "margin": 0.1,
+          "lgd": 0.6,
+          "threshold": 0.165
+        }
+      },
+      "calibration": [
+        {
+          "count": 293,
+          "mean_predicted_pd": 0.04499901458621025,
+          "observed_default_rate": 0.040955631399317405
+        },
+        {
+          "count": 160,
+          "mean_predicted_pd": 0.14219051599502563,
+          "observed_default_rate": 0.1375
+        },
+        {
+          "count": 60,
+          "mean_predicted_pd": 0.24230007827281952,
+          "observed_default_rate": 0.21666666666666667
+        },
+        {
+          "count": 36,
+          "mean_predicted_pd": 0.351978063583374,
+          "observed_default_rate": 0.2777777777777778
+        },
+        {
+          "count": 29,
+          "mean_predicted_pd": 0.44697901606559753,
+          "observed_default_rate": 0.4482758620689655
+        },
+        {
+          "count": 17,
+          "mean_predicted_pd": 0.5471701622009277,
+          "observed_default_rate": 0.7647058823529411
+        },
+        {
+          "count": 4,
+          "mean_predicted_pd": 0.6334314942359924,
+          "observed_default_rate": 0.75
+        },
+        {
+          "count": 1,
+          "mean_predicted_pd": 0.7309808135032654,
+          "observed_default_rate": 0.0
+        }
+      ]
+    },
+    "xgboost_deeper_calibrated": {
+      "metrics": {
+        "roc_auc": 0.8007420142973486,
+        "average_precision": 0.44730210932122416,
+        "brier_score": 0.10039557748757387,
+        "log_loss": 0.33773790068615456,
+        "default_prevalence": 0.14333333333333334
+      },
+      "policy": {
+        "margin": 0.1,
+        "lgd": 0.6,
+        "threshold": 0.15
+      },
+      "portfolio": {
+        "threshold": 0.15,
+        "applications": 600,
+        "approved": 434,
+        "approval_rate": 0.7233333333333334,
+        "approved_exposure": 69030710.42,
+        "observed_default_rate": 0.06451612903225806,
+        "mean_predicted_pd": 0.08802431447577366,
+        "simulated_loss": 3231529.398,
+        "simulated_revenue": 6364482.809,
+        "simulated_profit": 3132953.4110000003,
+        "expected_profit": 2069577.9270353564,
+        "profit_per_application": 5221.589018333334,
+        "assumptions": {
+          "margin": 0.1,
+          "lgd": 0.6,
+          "threshold": 0.15
+        }
+      },
+      "calibration": [
+        {
+          "count": 306,
+          "mean_predicted_pd": 0.07415560886166454,
+          "observed_default_rate": 0.042483660130718956
+        },
+        {
+          "count": 182,
+          "mean_predicted_pd": 0.13694668061785645,
+          "observed_default_rate": 0.16483516483516483
+        },
+        {
+          "count": 35,
+          "mean_predicted_pd": 0.24689373586859023,
+          "observed_default_rate": 0.17142857142857143
+        },
+        {
+          "count": 26,
+          "mean_predicted_pd": 0.34860101915322816,
+          "observed_default_rate": 0.3076923076923077
+        },
+        {
+          "count": 23,
+          "mean_predicted_pd": 0.44945972250855487,
+          "observed_default_rate": 0.391304347826087
+        },
+        {
+          "count": 13,
+          "mean_predicted_pd": 0.5440656588627741,
+          "observed_default_rate": 0.7692307692307693
+        },
+        {
+          "count": 12,
+          "mean_predicted_pd": 0.6511363834142685,
+          "observed_default_rate": 0.75
+        },
+        {
+          "count": 2,
+          "mean_predicted_pd": 0.7511256039142609,
+          "observed_default_rate": 0.5
+        },
+        {
+          "count": 1,
+          "mean_predicted_pd": 0.8252778649330139,
+          "observed_default_rate": 0.0
+        }
+      ]
+    }
+  },
+  "test": {
+    "logistic_baseline": {
+      "metrics": {
+        "roc_auc": 0.77091716915265,
+        "average_precision": 0.4088816374447265,
+        "brier_score": 0.10558518851166186,
+        "log_loss": 0.3496221231263699,
+        "default_prevalence": 0.14375
+      },
+      "policy": {
+        "margin": 0.1,
+        "lgd": 0.6,
+        "threshold": 0.195
+      },
+      "portfolio": {
+        "applications": 800,
+        "approved": 570,
+        "approval_rate": 0.7125,
+        "approved_exposure": 84814101.73,
+        "observed_default_rate": 0.07543859649122807,
+        "mean_predicted_pd": 0.07686260609930273,
+        "simulated_loss": 5167851.774,
+        "simulated_revenue": 7620101.544,
+        "simulated_profit": 2452249.7699999996,
+        "expected_profit": 2545865.227582537,
+        "profit_per_application": 3065.3122124999995,
+        "assumptions": {
+          "margin": 0.1,
+          "lgd": 0.6,
+          "threshold": 0.195
+        }
+      },
+      "calibration": [
+        {
+          "count": 390,
+          "mean_predicted_pd": 0.046026700973563144,
+          "observed_default_rate": 0.05384615384615385
+        },
+        {
+          "count": 185,
+          "mean_predicted_pd": 0.14514659271646377,
+          "observed_default_rate": 0.12432432432432433
+        },
+        {
+          "count": 116,
+          "mean_predicted_pd": 0.24587341423530332,
+          "observed_default_rate": 0.19827586206896552
+        },
+        {
+          "count": 63,
+          "mean_predicted_pd": 0.34872066409785063,
+          "observed_default_rate": 0.38095238095238093
+        },
+        {
+          "count": 34,
+          "mean_predicted_pd": 0.4390981129033023,
+          "observed_default_rate": 0.47058823529411764
+        },
+        {
+          "count": 11,
+          "mean_predicted_pd": 0.5348854978605602,
+          "observed_default_rate": 0.6363636363636364
+        },
+        {
+          "count": 1,
+          "mean_predicted_pd": 0.7052865782352011,
+          "observed_default_rate": 1.0
+        }
+      ]
+    },
+    "xgboost_shallow": {
+      "metrics": {
+        "roc_auc": 0.772326245636306,
+        "average_precision": 0.39233126019844095,
+        "brier_score": 0.10484979901955775,
+        "log_loss": 0.3479054953016972,
+        "default_prevalence": 0.14375
+      },
+      "policy": {
+        "margin": 0.1,
+        "lgd": 0.6,
+        "threshold": 0.17500000000000002
+      },
+      "portfolio": {
+        "applications": 800,
+        "approved": 551,
+        "approval_rate": 0.68875,
+        "approved_exposure": 82521453.28999999,
+        "observed_default_rate": 0.07985480943738657,
+        "mean_predicted_pd": 0.07737726868280698,
+        "simulated_loss": 5541322.415999999,
+        "simulated_revenue": 7328591.593,
+        "simulated_profit": 1787269.177000001,
+        "expected_profit": 2355697.69518783,
+        "profit_per_application": 2234.0864712500015,
+        "assumptions": {
+          "margin": 0.1,
+          "lgd": 0.6,
+          "threshold": 0.17500000000000002
+        }
+      },
+      "calibration": [
+        {
+          "count": 369,
+          "mean_predicted_pd": 0.04967056214809418,
+          "observed_default_rate": 0.051490514905149054
+        },
+        {
+          "count": 229,
+          "mean_predicted_pd": 0.1443314403295517,
+          "observed_default_rate": 0.12663755458515283
+        },
+        {
+          "count": 107,
+          "mean_predicted_pd": 0.23886674642562866,
+          "observed_default_rate": 0.16822429906542055
+        },
+        {
+          "count": 51,
+          "mean_predicted_pd": 0.35006728768348694,
+          "observed_default_rate": 0.5098039215686274
+        },
+        {
+          "count": 32,
+          "mean_predicted_pd": 0.4423329532146454,
+          "observed_default_rate": 0.5625
+        },
+        {
+          "count": 11,
+          "mean_predicted_pd": 0.5444732904434204,
+          "observed_default_rate": 0.45454545454545453
+        },
+        {
+          "count": 1,
+          "mean_predicted_pd": 0.6006519794464111,
+          "observed_default_rate": 0.0
+        }
+      ]
+    },
+    "approve_all": {
+      "portfolio": {
+        "applications": 800,
+        "approved": 800,
+        "approval_rate": 1.0,
+        "approved_exposure": 155578692.07,
+        "observed_default_rate": 0.14375,
+        "mean_predicted_pd": 0.14442127797752619,
+        "simulated_loss": 17157418.158,
+        "simulated_revenue": 12698299.513999999,
+        "simulated_profit": -4459118.644000001,
+        "expected_profit": -5156205.960387473,
+        "profit_per_application": -5573.8983050000015,
+        "assumptions": {
+          "margin": 0.1,
+          "lgd": 0.6,
+          "threshold": 0.17500000000000002
+        }
+      }
+    },
+    "reject_all": {
+      "portfolio": {
+        "applications": 800,
+        "approved": 0,
+        "approval_rate": 0.0,
+        "approved_exposure": 0.0,
+        "observed_default_rate": null,
+        "mean_predicted_pd": null,
+        "simulated_loss": 0.0,
+        "simulated_revenue": 0.0,
+        "simulated_profit": 0.0,
+        "expected_profit": 0.0,
+        "profit_per_application": 0.0,
+        "assumptions": {
+          "margin": 0.1,
+          "lgd": 0.6,
+          "threshold": 0
+        }
+      }
+    }
+  },
+  "test_cohorts": [
+    {
+      "loan_size_group": "(157061.02, 258172.035]",
+      "applicants": 200,
+      "approval_rate": 0.55,
+      "observed_default_rate": 0.21,
+      "mean_predicted_pd": 0.1990782618522644
+    },
+    {
+      "loan_size_group": "(258172.035, 1368676.96]",
+      "applicants": 200,
+      "approval_rate": 0.4,
+      "observed_default_rate": 0.215,
+      "mean_predicted_pd": 0.2258603274822235
+    },
+    {
+      "loan_size_group": "(8187.629, 85195.578]",
+      "applicants": 200,
+      "approval_rate": 0.995,
+      "observed_default_rate": 0.055,
+      "mean_predicted_pd": 0.04252840206027031
+    },
+    {
+      "loan_size_group": "(85195.578, 157061.02]",
+      "applicants": 200,
+      "approval_rate": 0.81,
+      "observed_default_rate": 0.095,
+      "mean_predicted_pd": 0.1102181226015091
+    }
+  ],
+  "versions": {
+    "numpy": "1.26.4",
+    "pandas": "2.2.3",
+    "scikit-learn": "1.6.1",
+    "shap": "0.47.2",
+    "joblib": "1.4.2"
+  },
+  "limitations": [
+    "Synthetic demo metrics are not evidence of real borrower performance.",
+    "Random applicant split; future-period generalization is not established.",
+    "Profit is simulated using observed binary outcomes and fixed margin/LGD assumptions; no actual recoveries or cash flows are measured.",
+    "Loan principal proxies exposure; funding costs, loan duration, prepayment and selection bias are not modeled.",
+    "Loan-size cohort diagnostics are not a demographic fairness or regulatory compliance assessment.",
+    "The test set is for final reporting; repeated tuning against its results invalidates the holdout."
+  ]
+}

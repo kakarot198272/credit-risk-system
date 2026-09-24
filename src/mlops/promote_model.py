@@ -1,55 +1,34 @@
+"""Explicit local activation or rollback. Restart API/dashboard after switching."""
+
+import argparse
 import json
-import os
+from pathlib import Path
 
-REGISTRY_PATH = "models/registry.json"
-
-
-def load_registry():
-    if not os.path.exists(REGISTRY_PATH):
-        print("Registry not found.")
-        return None
-
-    with open(REGISTRY_PATH, "r") as f:
-        registry = json.load(f)
-
-    return registry
+from src.inference.predict import Predictor
+from src.risk.artifacts import contained_path, model_directory, register_candidate
 
 
-def save_registry(registry):
-    with open(REGISTRY_PATH, "w") as f:
-        json.dump(registry, f, indent=4)
-
-
-def promote_model():
-    registry = load_registry()
-
-    if registry is None:
-        return
-
-    best_model = registry.get("best_profit_model")
-    production_model = registry.get("production_model")
-
-    print("\n===== MODEL PROMOTION =====")
-    print(f"Best Profit Model: {best_model}")
-    print(f"Current Production Model: {production_model}")
-
-    if best_model is None:
-        print("No best model available to promote.")
-        return
-
-    if best_model == production_model:
-        print("Best model is already in production.")
-        return
-
-    confirm = input("\nPromote best model to production? (y/n): ")
-
-    if confirm.lower() == "y":
-        registry["production_model"] = best_model
-        save_registry(registry)
-        print(f"\nModel {best_model} promoted to production.")
-    else:
-        print("\nPromotion cancelled.")
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--model-dir", type=Path, default=model_directory())
+    parser.add_argument(
+        "--artifact", required=True, help="Relative path to a trusted run's bundle.joblib"
+    )
+    parser.add_argument("--activate", action="store_true", required=True)
+    args = parser.parse_args()
+    path = contained_path(args.model_dir, args.artifact)
+    predictor = Predictor(path)
+    register_candidate(args.model_dir, args.artifact, activate=True)
+    print(
+        json.dumps(
+            {
+                "activated": predictor.version,
+                "dataset_kind": predictor.bundle["dataset_kind"],
+                "next_step": "Restart API/dashboard to load this version",
+            }
+        )
+    )
 
 
 if __name__ == "__main__":
-    promote_model()
+    main()

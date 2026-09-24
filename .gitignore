@@ -1,26 +1,23 @@
-# OS
-.DS_Store
-
-# Python
+# Python and tools
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
 
-# Logs
+# Generated runtime artifacts and private data
+artifacts/
+data/
 logs/
 *.log
 *.jsonl
-
-# Model artifacts (keep repo light)
-models/*.pkl
-models/*.joblib
-
-# Data
-data/
 *.parquet
-*.csv
+*.pkl
+*.joblib
+models/*/
 
-# Secrets
+# Local credentials and OS files
+.env
 *.pem
 *.key
-.env
+.DS_Store

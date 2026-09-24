@@ -1,75 +1,77 @@
-import pandas as pd
+"""Version-matched prediction-score drift. Not a measure of model accuracy."""
+
+import argparse
+import json
+from pathlib import Path
+
 import numpy as np
-import os
+import pandas as pd
 
-BASELINE_PATH = "artifacts/metrics/validation_predictions_xgboost.csv"
-LOG_PATH = "logs/prediction_logs.jsonl"
-
-N_BUCKETS = 10
-PSI_THRESHOLD = 0.2
+from src.risk.artifacts import ROOT, active_bundle_path, model_directory
 
 
 def calculate_psi(expected, actual, buckets=10):
+    expected, actual = np.asarray(expected, dtype=float), np.asarray(actual, dtype=float)
+    if expected.ndim != 1 or actual.ndim != 1 or not len(expected) or not len(actual):
+        raise ValueError("PSI needs two nonempty one-dimensional samples")
+    if not np.isfinite(expected).all() or not np.isfinite(actual).all():
+        raise ValueError("PSI inputs must be finite")
+    if not isinstance(buckets, int) or buckets < 2:
+        raise ValueError("Need at least two bins")
+    interior = np.unique(np.quantile(expected, np.linspace(0, 1, buckets + 1)[1:-1]))
+    edges = np.r_[-np.inf, interior, np.inf]
+    baseline_counts = np.histogram(expected, bins=edges)[0]
+    live_counts = np.histogram(actual, bins=edges)[0]
+    # Smoothing and normalization retain all probability mass, including extremes.
+    baseline = (baseline_counts + 0.5) / (len(expected) + 0.5 * len(baseline_counts))
+    live = (live_counts + 0.5) / (len(actual) + 0.5 * len(live_counts))
+    return float(np.sum((live - baseline) * np.log(live / baseline)))
 
-    # Use quantile bins based on baseline distribution
-    breakpoints = np.percentile(expected, np.linspace(0, 100, buckets + 1))
 
-    expected_percents = []
-    actual_percents = []
-
-    for i in range(buckets):
-        lower = breakpoints[i]
-        upper = breakpoints[i + 1]
-
-        expected_count = ((expected >= lower) & (expected < upper)).sum()
-        actual_count = ((actual >= lower) & (actual < upper)).sum()
-
-        expected_percent = expected_count / len(expected)
-        actual_percent = actual_count / len(actual)
-
-        if expected_percent == 0:
-            expected_percent = 1e-6
-        if actual_percent == 0:
-            actual_percent = 1e-6
-
-        expected_percents.append(expected_percent)
-        actual_percents.append(actual_percent)
-
-    psi = np.sum(
-        (np.array(actual_percents) - np.array(expected_percents)) *
-        np.log(np.array(actual_percents) / np.array(expected_percents))
-    )
-
-    return psi
+def drift_report(run_dir, log_path):
+    run_dir, log_path = Path(run_dir), Path(log_path)
+    report = json.loads((run_dir / "report.json").read_text())
+    baseline = pd.read_csv(run_dir / "validation_predictions.csv")["pred_prob"].to_numpy()
+    if not log_path.exists() or log_path.stat().st_size == 0:
+        return {
+            "status": "insufficient_data",
+            "live_samples": 0,
+            "model_version": report["model_version"],
+        }
+    logs = pd.read_json(log_path, lines=True)
+    required = {"model_version", "dataset_kind", "predicted_pd"}
+    if not required.issubset(logs):
+        raise ValueError("Prediction logs do not follow the version-2 schema")
+    selected = logs.loc[
+        (logs.model_version == report["model_version"])
+        & (logs.dataset_kind == report["dataset_kind"])
+    ]
+    if len(selected) < 20:
+        return {
+            "status": "insufficient_data",
+            "live_samples": len(selected),
+            "model_version": report["model_version"],
+        }
+    score = calculate_psi(baseline, selected.predicted_pd.to_numpy())
+    return {
+        "status": "review_shift" if score >= 0.2 else "no_score_shift_flag",
+        "psi": score,
+        "live_samples": len(selected),
+        "baseline_samples": len(baseline),
+        "excluded_other_versions": len(logs) - len(selected),
+        "model_version": report["model_version"],
+        "note": "0.2 is a demo heuristic. Score drift alone does not establish accuracy loss, concept drift, or a need to retrain.",
+    }
 
 
 def main():
-
-    if not os.path.exists(LOG_PATH):
-        print("No live prediction logs found.")
-        return
-
-    baseline_df = pd.read_csv(BASELINE_PATH)
-    baseline_pd = baseline_df["pred_prob"].values
-
-    live_df = pd.read_json(LOG_PATH, lines=True)
-    live_pd = live_df["predicted_pd"].values
-
-    if len(live_pd) < 10:
-        print("Not enough live data for drift analysis.")
-        return
-
-    psi = calculate_psi(baseline_pd, live_pd, N_BUCKETS)
-
-    print("\n===== DRIFT MONITOR =====")
-    print(f"Baseline Samples: {len(baseline_pd)}")
-    print(f"Live Samples: {len(live_pd)}")
-    print(f"PSI: {psi:.4f}")
-
-    if psi > PSI_THRESHOLD:
-        print("⚠ ALERT: Significant drift detected!")
-    else:
-        print("✅ Model stable. No significant drift detected.")
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--model-dir", type=Path, default=model_directory())
+    parser.add_argument("--log-path", type=Path, default=ROOT / "logs/prediction_logs.jsonl")
+    args = parser.parse_args()
+    print(
+        json.dumps(drift_report(active_bundle_path(args.model_dir).parent, args.log_path), indent=2)
+    )
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@ from datetime import datetime
 
 EXPERIMENT_PATH = "artifacts/experiments/experiment_log.json"
 
+
 def log_experiment(model_name, params, auc, profit, threshold):
     os.makedirs(os.path.dirname(EXPERIMENT_PATH), exist_ok=True)
 
@@ -13,7 +14,7 @@ def log_experiment(model_name, params, auc, profit, threshold):
         "parameters": params,
         "auc": float(auc),
         "profit": float(profit),
-        "threshold": float(threshold)
+        "threshold": float(threshold),
     }
 
     if os.path.exists(EXPERIMENT_PATH):

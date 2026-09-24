@@ -1,37 +1,33 @@
-import requests
+"""Send rows from a supplied dataset to the API; preserves the API's input schema."""
+
+import argparse
+
 import pandas as pd
-import numpy as np
+import requests
 
-API_URL = "http://127.0.0.1:8000/predict"
-DATA_PATH = "data/features/model_input.parquet"
-
-def clean_payload(row_dict):
-    """
-    Convert NaN values to None for JSON compatibility.
-    """
-    for k, v in row_dict.items():
-        if isinstance(v, float) and np.isnan(v):
-            row_dict[k] = None
-    return row_dict
+from src.models.data import read_dataset
 
 
 def main():
-    df = pd.read_parquet(DATA_PATH)
-
-    # Drop target column
-    if "TARGET" in df.columns:
-        df = df.drop(columns=["TARGET"])
-
-    # Sample 100 realistic customers
-    sample_df = df.sample(100, random_state=42)
-
-    print("Sending 100 realistic samples to API...")
-
-    for _, row in sample_df.iterrows():
-        payload = clean_payload(row.to_dict())
-        response = requests.post(API_URL, json=payload)
-
-    print("Simulation complete.")
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--data", required=True)
+    parser.add_argument("--api-url", default="http://127.0.0.1:8000")
+    parser.add_argument("--count", type=int, default=100)
+    args = parser.parse_args()
+    schema_response = requests.get(args.api_url + "/schema", timeout=10)
+    schema_response.raise_for_status()
+    names = list(schema_response.json()["input_features"])
+    data = read_dataset(args.data)
+    sample = data.sample(min(args.count, len(data)), random_state=42)[names]
+    for _, row in sample.iterrows():
+        payload = {name: None if pd.isna(value) else value for name, value in row.items()}
+        response = requests.post(
+            args.api_url + "/predict", json={"features": payload, "explain": False}, timeout=30
+        )
+        response.raise_for_status()
+    print(
+        f"Sent {len(sample)} successful requests; these are replayed dataset rows, not production users."
+    )
 
 
 if __name__ == "__main__":

@@ -1,9 +1,5 @@
 {
-    "production_model": "xgboost_20260220_182832.pkl",
-    "production_profit": 3302.22509765625,
-    "best_profit_model": "xgboost_20260220_182832.pkl",
-    "best_profit_value": 3302.22509765625,
-    "latest_candidate": "xgboost_20260220_210336.pkl",
-    "latest_candidate_profit": 3302.22509765625,
-    "latest_candidate_auc": 0.982414654765245
+  "schema_version": 2,
+  "production_model": null,
+  "latest_candidate": null
 }
